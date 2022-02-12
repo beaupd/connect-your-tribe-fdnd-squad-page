@@ -13,10 +13,11 @@ const loadSRC = (src) => {
 
 const lazyMember = (member) => {
     return new Promise(async (resolve, reject) => {
-        console.log("loading", member.avatar, " of id: ", member.memberId);
-        await loadSRC(member.avatar)
+        // console.log("loading", member.avatar, " of id: ", member.memberId);
+
+        await loadSRC(member.avatar || "./assets/user_default.png")
             .then((img) => {
-                console.log("done Loading", img, "of id: ", member.memberId);
+                // console.log("done Loading", img, "of id: ", member.memberId);
                 resolve(img);
             })
             .catch((err) => reject(err));
@@ -28,6 +29,8 @@ const Cards = {
     api: new InterfaceMember(),
     cardContainer: document.querySelector("ul.cards"),
     cards: document.querySelectorAll("ul.cards .card"),
+    members: [],
+    randomDelay: false,
 
     memberElement(member, img) {
         let item = function (value) {
@@ -39,23 +42,25 @@ const Cards = {
         };
         let listItem = document.createElement("li");
         listItem.classList.add("card");
-
+        // let image = document.createElement("img");
+        // image.src = "./assets/user_default.png";
         let unlistedList = document.createElement("ul");
         member.name &&
             member.surname &&
             unlistedList.appendChild(
                 item(
-                    member.name + " " + member.prefix == ""
-                        ? ""
-                        : `${member.prefix} ` + member.surname
+                    `${member.name}${
+                        member.prefix == "" ? " " : " " + member.prefix + " "
+                    }${member.surname}`
+                        .replace("  ", " ")
+                        .replace("  ", " ")
                 )
             );
         member.type && unlistedList.appendChild(item(member.type));
         member.nickname && unlistedList.appendChild(item(member.nickname));
         member.githubHandle &&
             unlistedList.appendChild(item(member.githubHandle));
-
-        listItem.appendChild(img ? img : this.defaultIMG);
+        listItem.appendChild(img);
         listItem.appendChild(unlistedList);
         return listItem;
     },
@@ -63,35 +68,38 @@ const Cards = {
         await this.api.fetch();
         return this.api.members;
     },
-    setMember(member, img) {
+    setMember(member, index, img) {
         // console.log("setting: ", member, " with id: ", member.memberId, "\n");
-        // setTimeout(() => {
-        if (this.cards[this.index]) {
-            this.cards[this.index].replaceWith(this.memberElement(member, img));
-            this.index++;
+        if (this.randomDelay) {
+            setTimeout(() => {
+                this.cards[index].replaceWith(
+                    this.memberElement(member, img ? img : undefined)
+                );
+            }, Math.random() * 10000);
         } else {
-            // this.cardContainer.appendChild(this.memberElement(member, img));
-            this.cardContainer.insertBefore(
-                this.memberElement(member, img),
-                this.cardContainer.childNodes[0]
+            this.cards[index].replaceWith(
+                this.memberElement(member, img ? img : undefined)
             );
-            this.index++;
         }
-        // }, Math.random() * 1000 + 1000);
     },
     async LoadMembers() {
-        const members = await this.getMembers();
-        members.forEach((m) =>
-            m.avatar
-                ? lazyMember(m)
-                      .then((img) => this.setMember(m, img))
-                      .catch(() => this.setMember(m))
-                : this.setMember(m)
+        this.members.forEach((m, i) =>
+            lazyMember(m).then((img) => this.setMember(m, i, img))
         );
     },
-    init() {
+    async init() {
+        this.members = await this.getMembers();
+        let cards = document.createElement("ul");
+        cards.classList.add("cards");
+        this.members.forEach(() => {
+            let card = document.createElement("li");
+            card.classList.add("card");
+            cards.appendChild(card);
+        });
+        this.cardContainer.replaceWith(cards);
+        this.cards = document.querySelectorAll("ul.cards .card");
+
         this.LoadMembers();
-        this.defaultIMG.src = "assets/user_default.png";
     },
 };
 

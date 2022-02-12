@@ -5,10 +5,10 @@
         <meta http-equiv="X-UA-Compatible" content="IE=edge" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>Overview</title>
+        <link rel="preload" href="./styles/style.css" as="style" />
         <link rel="stylesheet" href="./styles/style.css" />
-        <link rel="preload" as="image" href="./assets/user_default.png" />
 
-        <script defer type="module">
+        <script defer>
             const lazyLoad = (src) => {
                 return new Promise((resolve, reject) => {
                     var s = document.createElement("script");
@@ -24,8 +24,18 @@
                     x.parentNode.insertBefore(s, x);
                 });
             };
-            await lazyLoad("./scripts/interfaceAPI.js");
-            lazyLoad("./scripts/script.js");
+
+            const afterDOM = async () => {
+                console.log(
+                    "%cDOM has loaded: Starting scripts...",
+                    "color: green;"
+                );
+                lazyLoad("./scripts/interfaceAPI.js").then(() =>
+                    lazyLoad("./scripts/script.js")
+                );
+            };
+
+            afterDOM();
         </script>
     </head>
     <body>
@@ -67,8 +77,9 @@
                                         <path
                                             d="M18 15l-6 -6l-6 6h12"
                                             transform="rotate(180 12 12)"
-                                        /></svg
-                                ></span>
+                                        />
+                                    </svg>
+                                </span>
                             </summary>
                             <hr />
                             <ul></ul>
